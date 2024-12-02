@@ -34,6 +34,7 @@ contract InsuranceNFT is ERC721, Ownable {
         return tokenToPremium[tokenId];
     }
 
+
     function withdrawFunds() external onlyOwner {
         payable(owner()).transfer(address(this).balance);
     }
