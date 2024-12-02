@@ -11,7 +11,7 @@ contract InsuranceNFT is ERC721, Ownable {
 
     event InsurancePurchased(address indexed user, uint256 premium, uint256 tokenId);
 
-    constructor() ERC721("InsuranceNFT", "INFT") {
+    constructor() ERC721("InsuranceNFT", "INFT") Ownable(msg.sender) {
         tokenCounter = 1;
     }
 
