@@ -1,11 +1,13 @@
 import React, { useState } from "react";
-import { ethers } from "ethers";
+import { BrowserProvider } from "ethers";
+import { keccak256, toUtf8Bytes, getBytes } from "ethers";
 import axios from "axios";
 
 const WalletAuth = () => {
   const [walletAddress, setWalletAddress] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
   const [error, setError] = useState("");
+  const [nonce, setNonce] = useState("");
 
   const connectWallet = async () => {
     try {
@@ -14,30 +16,38 @@ const WalletAuth = () => {
         return;
       }
 
-      // Request access to MetaMask
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const provider = new BrowserProvider(window.ethereum);
       await provider.send("eth_requestAccounts", []);
-      const signer = provider.getSigner();
+      const signer = await provider.getSigner();
       const address = await signer.getAddress();
       setWalletAddress(address);
 
-      // Prompt user to sign a message
-      const message = "Authenticate with this signature.";
-      const signature = await signer.signMessage(message);
+      // Fetch the nonce for this wallet address
+      const nonceResponse = await axios.get(`http://127.0.0.1:8000/auth/nonce/${address}`);
+      setNonce(nonceResponse.data.nonce);
 
-      // Send signature to the server for authentication
-      const response = await axios.post("http://127.0.0.1:8000/auth", {
+      // Sign the nonce
+      const message = `Login request: ${nonceResponse.data.nonce}`;
+      const messageHash = keccak256(toUtf8Bytes(message));
+        const signature = await signer.signMessage(getBytes(messageHash));
+
+
+    console.log("Message:", message);
+    console.log("Signature:", signature);
+
+      // Verify the signature on the server
+      const verificationResponse = await axios.post("http://127.0.0.1:8000/auth/verify", {
         address,
         signature,
       });
 
-      if (response.data.message === "Authenticated") {
+      if (verificationResponse.data.message === "Login successful") {
         setAuthenticated(true);
       } else {
         setError("Authentication failed");
       }
     } catch (err) {
-      setError(err.message || "An error occurred");
+      setError(err.response?.data?.detail || err.message || "An error occurred");
     }
   };
 
@@ -51,6 +61,7 @@ const WalletAuth = () => {
             Connect Wallet
           </button>
           {walletAddress && <p>Wallet Address: {walletAddress}</p>}
+          {nonce && <p>Nonce: {nonce}</p>}
           {error && <p style={{ color: "red" }}>{error}</p>}
         </div>
       ) : (

@@ -2,10 +2,26 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from web3 import Web3
 import random
+from eth_account.messages import encode_defunct
 import string
 import time
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Frontend origin
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+w3 = Web3(Web3.HTTPProvider('https://eth-sepolia.g.alchemy.com/v2/Jqg2yAU17ZRbz5VjFoa9PfUL4BbxhCkS'))  # Replace with your provider
+
+if not w3.is_connected():
+    raise Exception("Web3 is not connected to a blockchain network!")
 
 # Зберігання nonce для кожного гаманця
 nonces = {}
@@ -22,15 +38,16 @@ class VerifyRequest(BaseModel):
 # Роут для отримання nonce
 @app.get("/auth/nonce/{address}")
 def get_nonce(address: str):
-    address = Web3.to_checksum_address(address)  # Перевірка валідності адреси
+    address = w3.to_checksum_address(address)  # Перевірка валідності адреси
     nonce = generate_nonce()
     nonces[address] = {"nonce": nonce, "timestamp": time.time()}
     return {"nonce": nonce}
 
+
 # Роут для перевірки підпису
 @app.post("/auth/verify")
 def verify_signature(request: VerifyRequest):
-    address = Web3.to_checksum_address(request.address)
+    address = w3.to_checksum_address(request.address)
 
     # Перевірка чи існує nonce
     if address not in nonces:
@@ -42,18 +59,22 @@ def verify_signature(request: VerifyRequest):
         del nonces[address]
         raise HTTPException(status_code=400, detail="Nonce expired")
 
-    # Повідомлення, яке користувач мав підписати
     message = f"Login request: {nonce_data['nonce']}"
-    message_hash = Web3.solidityKeccak(["string"], [message])  # Хеш повідомлення
+    message_hash = w3.solidity_keccak(["string"], [message])
 
-    # Відновлення адреси з підпису
+    print("Message:", message)
+    print("Message Hash:", message_hash.hex())
+
+    # Create the EIP-191 encoded message
+    encoded_message = encode_defunct(message_hash)
+
     try:
-        signer_address = Web3.eth.account.recover_message(
-            message_hash,
-            signature=request.signature
-        )
+        signer_address = w3.eth.account.recover_message(encoded_message, signature=request.signature)
+        print("Recovered Signer Address:", signer_address)
     except Exception as e:
+        print("Error recovering signer address:", str(e))
         raise HTTPException(status_code=400, detail="Invalid signature")
+    
 
     # Перевірка, чи співпадає адреса
     if signer_address.lower() == address.lower():
@@ -61,3 +82,4 @@ def verify_signature(request: VerifyRequest):
         return {"message": "Login successful", "address": signer_address}
     else:
         raise HTTPException(status_code=401, detail="Invalid signature")
+    
