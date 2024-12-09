@@ -1,12 +1,19 @@
 import './App.css';
-import WalletAuth from "./components/WalletAuth";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import RegisterPage from "./pages/RegisterPage";
+import WalletConnect from "./components/WalletConnect";
 
-function App() {
+const App = () => {
   return (
-    <div style={{ textAlign: "center", padding: "50px" }}>
-      <WalletAuth />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<RegisterPage />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;
+
+
