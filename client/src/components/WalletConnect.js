@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { BrowserProvider } from "ethers";
 import { keccak256, toUtf8Bytes, getBytes } from "ethers";
-import axios from "axios";
+import apiService from "../services/apiService";
+import { Box, Button, Typography, Alert } from "@mui/material";
 
 const WalletConnect = ({ onWalletConnected }) => {
-    const [walletAddress, setWalletAddress] = useState("");
-    const [authenticated, setAuthenticated] = useState(false);
-    const [error, setError] = useState("");
-    const [nonce, setNonce] = useState("");
-    
+  const [walletAddress, setWalletAddress] = useState("");
+  const [authenticated, setAuthenticated] = useState(false);
+  const [error, setError] = useState("");
+
   const connectWallet = async () => {
     try {
       if (!window.ethereum) {
@@ -22,27 +22,26 @@ const WalletConnect = ({ onWalletConnected }) => {
       const address = await signer.getAddress();
       setWalletAddress(address);
       onWalletConnected(address);
+
       // Fetch the nonce for this wallet address
-      const nonceResponse = await axios.get(`http://127.0.0.1:8000/auth/nonce/${address}`);
-      setNonce(nonceResponse.data.nonce);
+      const { nonce } = await apiService.getNonce(address);
 
       // Sign the nonce
-      const message = `Login request: ${nonceResponse.data.nonce}`;
+      const message = `Login request: ${nonce}`;
       const messageHash = keccak256(toUtf8Bytes(message));
-    const signature = await signer.signMessage(getBytes(messageHash));
-
-
-    console.log("Message:", message);
-    console.log("Signature:", signature);
+      const signature = await signer.signMessage(getBytes(messageHash));
 
       // Verify the signature on the server
-      const verificationResponse = await axios.post("http://127.0.0.1:8000/auth/verify", {
-        address,
-        signature,
-      });
+      const { message: serverMessage, address: verifiedAddress, token } =
+        await apiService.verifySignature({
+          address,
+          signature,
+        });
 
-      if (verificationResponse.data.message === "Login successful") {
+      if (serverMessage === "Login successful") {
         setAuthenticated(true);
+        localStorage.setItem("token", token); // Save token in localStorage
+        console.log("Authenticated as:", verifiedAddress);
       } else {
         setError("Authentication failed");
       }
@@ -52,13 +51,40 @@ const WalletConnect = ({ onWalletConnected }) => {
   };
 
   return (
-    <div>
-      {walletAddress ? (
-        <p>Connected: {walletAddress}</p>
-      ) : (
-        <button onClick={connectWallet}>Connect Wallet</button>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 2,
+        mt: 4,
+      }}
+    >
+      {(
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={connectWallet}
+          sx={{
+            textTransform: "none",
+            padding: "10px 20px",
+            fontSize: "1rem",
+          }}
+        >
+          Connect Wallet
+        </Button>
       )}
-    </div>
+      {authenticated && (
+        <Alert severity="success" sx={{ width: "100%" }}>
+          Successfully authenticated!
+        </Alert>
+      )}
+      {error && (
+        <Alert severity="error" sx={{ width: "100%" }}>
+          {error}
+        </Alert>
+      )}
+    </Box>
   );
 };
 
