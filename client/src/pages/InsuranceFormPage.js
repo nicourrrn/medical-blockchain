@@ -1,11 +1,9 @@
 import React, { useState } from "react";
-import { Box, TextField, Button } from "@mui/material";
+import { Box, TextField, Button, FormControl, InputLabel, Select, MenuItem, Switch, FormControlLabel } from "@mui/material";
 import apiService from "../services/apiService";
 
 const InsuranceFormPage = () => {
   const [userInfo, setUserInfo] = useState({
-    address: "",
-    contract: "",
     mail: "",
     name: "",
     age: 0,
@@ -20,17 +18,30 @@ const InsuranceFormPage = () => {
     const { name, value } = e.target;
     setUserInfo({
       ...userInfo,
-      [name]: value,
+      [name]: name === "age" || name === "bmi" || name === "children" ? parseFloat(value) : value,
+    });
+  };
+
+  const handleSwitchChange = (e) => {
+    const { name, checked } = e.target;
+    setUserInfo({
+      ...userInfo,
+      [name]: checked,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Make API call to submit user information
+  
+    // Prepare the data to send to the server
+    const payload = {
+      ...userInfo,
+      sex: userInfo.sex === "male" ? 1 : 2, // Convert sex to numeric representation
+    };
+  
     try {
       const token = localStorage.getItem("token");
-      await apiService.postUserInfo(userInfo, token);
+      await apiService.postUserInfo(payload, token);
       alert("User information saved successfully!");
     } catch (err) {
       alert("Error saving user information");
@@ -42,6 +53,14 @@ const InsuranceFormPage = () => {
       <h2>User Information Form</h2>
       <form onSubmit={handleSubmit}>
         <TextField
+          label="Email"
+          name="mail"
+          value={userInfo.mail}
+          onChange={handleInputChange}
+          fullWidth
+          margin="normal"
+        />
+        <TextField
           label="Name"
           name="name"
           value={userInfo.name}
@@ -50,15 +69,62 @@ const InsuranceFormPage = () => {
           margin="normal"
         />
         <TextField
-          label="Email"
-          name="mail"
-          value={userInfo.mail}
+          label="Age"
+          name="age"
+          type="number"
+          value={userInfo.age}
           onChange={handleInputChange}
           fullWidth
           margin="normal"
         />
-        {/* Add other fields similarly */}
-        <Button type="submit" variant="contained" color="primary">
+        <FormControl fullWidth margin="normal">
+          <InputLabel>Sex</InputLabel>
+          <Select
+            name="sex"
+            value={userInfo.sex}
+            onChange={handleInputChange}
+          >
+            <MenuItem value="male">Male</MenuItem>
+            <MenuItem value="female">Female</MenuItem>
+          </Select>
+        </FormControl>
+        <TextField
+          label="BMI"
+          name="bmi"
+          type="number"
+          value={userInfo.bmi}
+          onChange={handleInputChange}
+          fullWidth
+          margin="normal"
+        />
+        <TextField
+          label="Children"
+          name="children"
+          type="number"
+          value={userInfo.children}
+          onChange={handleInputChange}
+          fullWidth
+          margin="normal"
+        />
+        <FormControlLabel
+          control={
+            <Switch
+              name="smoker"
+              checked={userInfo.smoker}
+              onChange={handleSwitchChange}
+            />
+          }
+          label="Smoker"
+        />
+        <TextField
+          label="Region"
+          name="region"
+          value={userInfo.region}
+          onChange={handleInputChange}
+          fullWidth
+          margin="normal"
+        />
+        <Button type="submit" variant="contained" color="primary" sx={{ mt: 2 }}>
           Submit
         </Button>
       </form>

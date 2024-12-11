@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import "./RegisterPage.css";
 import WalletConnect from "../components/WalletConnect";
 
 const RegisterPage = () => {
@@ -16,10 +17,11 @@ const RegisterPage = () => {
   };
 
   return (
-    <div>
-      <h1>Insurance Registration</h1>
-      <WalletConnect onWalletConnected={handleWalletConnected} />
-      {walletAddress && <p>Connected: {walletAddress}</p>}
+    <div className="center-container">
+        <h1>Authentication</h1>
+        <h2>Please sign message in your wallet</h2>
+        <WalletConnect onWalletConnected={handleWalletConnected} />
+        {walletAddress && <p>Connected: {walletAddress}</p>}
     </div>
   );
 };
