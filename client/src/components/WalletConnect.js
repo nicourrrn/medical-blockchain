@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { BrowserProvider } from "ethers";
 import { keccak256, toUtf8Bytes, getBytes } from "ethers";
-import axios from "axios";
+import apiService from "../services/apiService";
+import { Box, Button, Typography, Alert } from "@mui/material";
 
 const WalletConnect = ({ onWalletConnected }) => {
-    const [walletAddress, setWalletAddress] = useState("");
-    const [authenticated, setAuthenticated] = useState(false);
-    const [error, setError] = useState("");
-    const [nonce, setNonce] = useState("");
-    
+  const [walletAddress, setWalletAddress] = useState("");
+  const [authenticated, setAuthenticated] = useState(false);
+  const [error, setError] = useState("");
+
   const connectWallet = async () => {
     try {
       if (!window.ethereum) {
@@ -21,44 +21,58 @@ const WalletConnect = ({ onWalletConnected }) => {
       const signer = await provider.getSigner();
       const address = await signer.getAddress();
       setWalletAddress(address);
-      onWalletConnected(address);
+
       // Fetch the nonce for this wallet address
-      const nonceResponse = await axios.get(`http://127.0.0.1:8000/auth/nonce/${address}`);
-      setNonce(nonceResponse.data.nonce);
+      const { nonce } = await apiService.getNonce(address);
 
       // Sign the nonce
-      const message = `Login request: ${nonceResponse.data.nonce}`;
+      const message = `Login request: ${nonce}`;
       const messageHash = keccak256(toUtf8Bytes(message));
-    const signature = await signer.signMessage(getBytes(messageHash));
-
-
-    console.log("Message:", message);
-    console.log("Signature:", signature);
+      const signature = await signer.signMessage(getBytes(messageHash));
 
       // Verify the signature on the server
-      const verificationResponse = await axios.post("http://127.0.0.1:8000/auth/verify", {
+      const { message: serverMessage, token } = await apiService.verifySignature({
         address,
         signature,
       });
 
-      if (verificationResponse.data.message === "Login successful") {
+      if (serverMessage === "Login successful") {
         setAuthenticated(true);
+        localStorage.setItem("token", token); // Save token in localStorage
+        onWalletConnected(address, true); // Notify parent component of successful authentication
       } else {
         setError("Authentication failed");
+        onWalletConnected(address, false); // Notify parent component of failed authentication
       }
     } catch (err) {
       setError(err.response?.data?.detail || err.message || "An error occurred");
+      onWalletConnected(walletAddress, false); // Notify parent component of failed authentication
     }
   };
 
   return (
-    <div>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 2,
+        mt: 4,
+      }}
+    >
       {walletAddress ? (
-        <p>Connected: {walletAddress}</p>
+        <Typography variant="h6" color="primary">
+          Connected: {walletAddress}
+        </Typography>
       ) : (
-        <button onClick={connectWallet}>Connect Wallet</button>
+        <Button variant="contained" color="primary" onClick={connectWallet}>
+          Connect Wallet
+        </Button>
       )}
-    </div>
+
+      {authenticated && <Alert severity="success">Authenticated!</Alert>}
+      {error && <Alert severity="error">{error}</Alert>}
+    </Box>
   );
 };
 
