@@ -23,3 +23,13 @@ class NeuralNetwork(nn.Module):
 
 
 model = NeuralNetwork().to(device)
+model.load_state_dict(torch.load("./model/model.pth"))
+model.eval()
+
+
+def make_prediction(
+    age: int, bmi: float, smoker: bool, children: int, is_male: bool
+) -> float:
+    data = torch.tensor([[age, bmi, smoker, children, is_male, not is_male]]).to(device)
+    output = model(data)
+    return output.item()

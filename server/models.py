@@ -17,15 +17,15 @@ class Region(Enum):
 
 class User(BaseModel):
     address: str
-    contract: str
-    mail: str
-    name: str
-    age: int
-    sex: Sex
-    bmi: float
-    children: int
-    smoker: bool
-    region: Region
+    contract: str | None = None
+    mail: str = ""
+    name: str = ""
+    age: int = 0
+    sex: Sex = Sex.male
+    bmi: float = 0.0
+    children: int = 0
+    smoker: bool = False
+    region: Region = Region.southwest
 
 
 users: dict[str, User] = {}
