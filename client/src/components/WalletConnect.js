@@ -31,12 +31,12 @@ const WalletConnect = ({ onWalletConnected }) => {
       const signature = await signer.signMessage(getBytes(messageHash));
 
       // Verify the signature on the server
-      const { message: serverMessage, token } = await apiService.verifySignature({
+      const { token } = await apiService.verifySignature({
         address,
         signature,
       });
-
-      if (serverMessage === "Login successful") {
+    
+      if (token) {
         setAuthenticated(true);
         localStorage.setItem("token", token); // Save token in localStorage
         onWalletConnected(address, true); // Notify parent component of successful authentication

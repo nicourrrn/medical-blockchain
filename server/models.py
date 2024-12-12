@@ -16,7 +16,7 @@ class Region(Enum):
 
 
 class User(BaseModel):
-    address: str
+    address: str | None = None
     contract: str | None = None
     mail: str = ""
     name: str = ""

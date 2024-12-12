@@ -43,10 +43,17 @@ class VerifyRequest(BaseModel):
 @app.post("/auth/verify")
 def verify_signature(request: VerifyRequest):
     try:
+        # Verify the signature and retrieve the address
+        address = c_verify(request.address, request.signature)
+        
+        # Check if the user already exists
+        if not get_user(address):
+            user = User(address=address)
+            create_user(user)
+        
+        # Generate a token with the user's address and a new nonce
         return {
-            "token": encode_jwt(
-                {"address": c_verify(request.address, request.signature)}
-            )
+            "token": encode_jwt({"address": address, "nonce": c_get_nonce(address)})
         }
     except InvalidNonce:
         raise HTTPException(status_code=400, detail="Invalid nonce")
@@ -54,6 +61,8 @@ def verify_signature(request: VerifyRequest):
         raise HTTPException(status_code=400, detail="Nonce expired")
     except InvalidSignature:
         raise HTTPException(status_code=400, detail="Invalid signature")
+
+
 
 
 @app.post("/auth/info")
@@ -64,7 +73,7 @@ async def post_user_info(user: User, authorization: str = Header(None)):
 
     return {
         "message": "User info saved successfully",
-        "paymant": make_prediction(
+        "payment": make_prediction(
             user.age, user.bmi, user.smoker, user.children, user.sex == Sex.male
         ),
     }
@@ -78,7 +87,7 @@ async def get_user_info(authorization: str = Header(None)):
         raise HTTPException(status_code=404, detail="User not found")
     return {
         "user": user,
-        "paymant": make_prediction(
+        "payment": make_prediction(
             user.age, user.bmi, user.smoker, user.children, user.sex == Sex.male
         ),
     }
