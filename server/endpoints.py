@@ -3,10 +3,11 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from ai import make_prediction
 from crypto import InvalidNonce, InvalidSignature, NonceExpired
 from crypto import get_nonce as c_get_nonce
 from crypto import verify_signature as c_verify
-from models import User, create_user, get_all_users, get_user, update_user
+from models import Sex, User, create_user, get_all_users, get_user, update_user
 
 app = FastAPI()
 
@@ -56,15 +57,31 @@ def verify_signature(request: VerifyRequest):
 
 
 @app.post("/auth/info")
-async def post_user_info(user: User):
-    create_user(user)
-    return {"message": "User info saved successfully"}
+async def post_user_info(user: User, authorization: str = Header(None)):
+    if (payload := decode_jwt(authorization)) is None:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    update_user(payload["address"], user)
+
+    return {
+        "message": "User info saved successfully",
+        "paymant": make_prediction(
+            user.age, user.bmi, user.smoker, user.children, user.sex == Sex.male
+        ),
+    }
 
 
 @app.get("/auth/info")
 async def get_user_info(authorization: str = Header(None)):
     payload = decode_jwt(authorization)
-    return get_user(payload["address"])
+    user = get_user(payload["address"])
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {
+        "user": user,
+        "paymant": make_prediction(
+            user.age, user.bmi, user.smoker, user.children, user.sex == Sex.male
+        ),
+    }
 
 
 class Contract(BaseModel):
