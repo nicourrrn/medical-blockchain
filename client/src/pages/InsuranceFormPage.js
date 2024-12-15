@@ -1,5 +1,22 @@
 import React, { useState } from "react";
-import { Box, TextField, Button, FormControl, InputLabel, Select, MenuItem, Switch, FormControlLabel } from "@mui/material";
+import {
+  Box,
+  TextField,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Switch,
+  FormControlLabel,
+  Container,
+  Paper,
+  Typography,
+  Divider,
+  Grid,
+  Card,
+  CardContent
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import apiService from "../services/apiService";
 
@@ -74,110 +91,202 @@ const InsuranceFormPage = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await apiService.postUserInfo(payload, token); // API call to post user info
-      navigate("/payment", { state: { payment: response.payment } }); // Redirect to PaymentPage with payment info
+      navigate('/payment', { 
+        state: { 
+            premium: response.payment 
+        }
+    }); // Redirect to PaymentPage with payment info
     } catch (err) {
       alert(err.response?.data?.detail || "Error saving user information");
     }
   };
 
   return (
-    <Box sx={{ maxWidth: 600, margin: "0 auto", padding: 2 }}>
-      <h2>User Information Form</h2>
-      <form onSubmit={handleSubmit}>
-        {/* Form Fields with validation */}
-        <TextField
-          label="Email"
-          name="mail"
-          value={userInfo.mail}
-          onChange={handleInputChange}
-          error={!!errors.mail}
-          helperText={errors.mail}
-          fullWidth
-          margin="normal"
-        />
-        <TextField
-          label="Name"
-          name="name"
-          value={userInfo.name}
-          onChange={handleInputChange}
-          error={!!errors.name}
-          helperText={errors.name}
-          fullWidth
-          margin="normal"
-        />
-        <TextField
-          label="Age"
-          name="age"
-          type="number"
-          value={userInfo.age}
-          onChange={handleInputChange}
-          error={!!errors.age}
-          helperText={errors.age}
-          fullWidth
-          margin="normal"
-        />
-        <FormControl fullWidth margin="normal">
-          <InputLabel>Sex</InputLabel>
-          <Select
-            name="sex"
-            value={userInfo.sex}
-            onChange={handleInputChange}
+    <Container maxWidth="md">
+      <Box
+        sx={{
+          minHeight: '100vh',
+          py: 4,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 3
+        }}
+      >
+        <Paper 
+          elevation={3}
+          sx={{
+            borderRadius: 2,
+            overflow: 'hidden'
+          }}
+        >
+          <Box
+            sx={{
+              bgcolor: 'primary.main',
+              color: 'white',
+              p: 3,
+              textAlign: 'center'
+            }}
           >
-            <MenuItem value="male">Male</MenuItem>
-            <MenuItem value="female">Female</MenuItem>
-          </Select>
-        </FormControl>
-        <TextField
-          label="BMI"
-          name="bmi"
-          type="number"
-          value={userInfo.bmi}
-          onChange={handleInputChange}
-          error={!!errors.bmi}
-          helperText={errors.bmi}
-          fullWidth
-          margin="normal"
-        />
-        <TextField
-          label="Children"
-          name="children"
-          type="number"
-          value={userInfo.children}
-          onChange={handleInputChange}
-          error={!!errors.children}
-          helperText={errors.children}
-          fullWidth
-          margin="normal"
-        />
-        <FormControlLabel
-          control={
-            <Switch
-              name="smoker"
-              checked={userInfo.smoker}
-              onChange={handleSwitchChange}
-            />
-          }
-          label="Smoker"
-        />
-        <FormControl fullWidth margin="normal">
-          <InputLabel>Region</InputLabel>
-          <Select
-            name="region"
-            value={userInfo.region}
-            onChange={handleInputChange}
-            error={!!errors.region}
-          >
-            <MenuItem value="southwest">Southwest</MenuItem>
-            <MenuItem value="southeast">Southeast</MenuItem>
-            <MenuItem value="northwest">Northwest</MenuItem>
-            <MenuItem value="northeast">Northeast</MenuItem>
-          </Select>
-        </FormControl>
-        <Button type="submit" variant="contained" color="primary" sx={{ mt: 2 }}>
-          Submit
-        </Button>
-      </form>
-    </Box>
+            <Typography variant="h4" component="h1">
+              Insurance Application
+            </Typography>
+            <Typography variant="subtitle1" sx={{ mt: 1 }}>
+              Please fill in your information
+            </Typography>
+          </Box>
+
+          <form onSubmit={handleSubmit}>
+            <CardContent sx={{ p: 4 }}>
+              <Grid container spacing={3}>
+                {/* Personal Information Section */}
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom>
+                    Personal Information
+                  </Typography>
+                  <Divider sx={{ mb: 3 }} />
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        label="Email"
+                        name="mail"
+                        value={userInfo.mail}
+                        onChange={handleInputChange}
+                        error={!!errors.mail}
+                        helperText={errors.mail}
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        label="Name"
+                        name="name"
+                        value={userInfo.name}
+                        onChange={handleInputChange}
+                        error={!!errors.name}
+                        helperText={errors.name}
+                        fullWidth
+                      />
+                    </Grid>
+                  </Grid>
+                </Grid>
+
+                {/* Health Information Section */}
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom>
+                    Health Information
+                  </Typography>
+                  <Divider sx={{ mb: 3 }} />
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        label="Age"
+                        name="age"
+                        type="number"
+                        value={userInfo.age}
+                        onChange={handleInputChange}
+                        error={!!errors.age}
+                        helperText={errors.age}
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <FormControl fullWidth>
+                        <InputLabel>Sex</InputLabel>
+                        <Select
+                          name="sex"
+                          value={userInfo.sex}
+                          onChange={handleInputChange}
+                        >
+                          <MenuItem value="male">Male</MenuItem>
+                          <MenuItem value="female">Female</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        label="BMI"
+                        name="bmi"
+                        type="number"
+                        value={userInfo.bmi}
+                        onChange={handleInputChange}
+                        error={!!errors.bmi}
+                        helperText={errors.bmi}
+                        fullWidth
+                      />
+                    </Grid>
+                  </Grid>
+                </Grid>
+
+                {/* Additional Information Section */}
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom>
+                    Additional Information
+                  </Typography>
+                  <Divider sx={{ mb: 3 }} />
+                  <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} md={4}>
+                      <TextField
+                        label="Children"
+                        name="children"
+                        type="number"
+                        value={userInfo.children}
+                        onChange={handleInputChange}
+                        error={!!errors.children}
+                        helperText={errors.children}
+                        fullWidth
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <FormControl fullWidth>
+                        <InputLabel>Region</InputLabel>
+                        <Select
+                          name="region"
+                          value={userInfo.region}
+                          onChange={handleInputChange}
+                          error={!!errors.region}
+                        >
+                          <MenuItem value="southwest">Southwest</MenuItem>
+                          <MenuItem value="southeast">Southeast</MenuItem>
+                          <MenuItem value="northwest">Northwest</MenuItem>
+                          <MenuItem value="northeast">Northeast</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            name="smoker"
+                            checked={userInfo.smoker}
+                            onChange={handleSwitchChange}
+                          />
+                        }
+                        label="Smoker"
+                      />
+                    </Grid>
+                  </Grid>
+                </Grid>
+              </Grid>
+
+              <Box sx={{ mt: 4, textAlign: 'center' }}>
+                <Button 
+                  type="submit" 
+                  variant="contained" 
+                  color="primary" 
+                  size="large"
+                  sx={{ 
+                    minWidth: 200,
+                    py: 1.5
+                  }}
+                >
+                  Submit Application
+                </Button>
+              </Box>
+            </CardContent>
+          </form>
+        </Paper>
+      </Box>
+    </Container>
   );
 };
 

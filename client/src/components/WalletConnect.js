@@ -9,6 +9,44 @@ const WalletConnect = ({ onWalletConnected }) => {
   const [authenticated, setAuthenticated] = useState(false);
   const [error, setError] = useState("");
 
+  const checkUserContract = async (address) => {
+    try {
+      const userInfo = await apiService.getUserInfo();
+      console.log("Full user info:", JSON.stringify(userInfo, null, 2));
+
+      if (userInfo.user && userInfo.user.contract) {
+        let contractData = userInfo.user.contract;
+        console.log("Contract data (initial):", contractData);
+
+        if (typeof contractData === 'object' && contractData !== null) {
+          console.log("Contract object properties:", Object.keys(contractData));
+
+          // Check for both address and tokenId directly
+          if (contractData.address && contractData.tokenId) {
+            console.log("Token ID found:", contractData.tokenId);
+            onWalletConnected(address, true, {
+              hasContract: true,
+              tokenId: contractData.tokenId,
+              contractAddress: contractData.address
+            });
+          } else {
+            console.log("Missing address or tokenId in contract data");
+            onWalletConnected(address, true, { hasContract: false });
+          }
+        } else {
+          console.log("Contract data is not a valid object:", contractData);
+          onWalletConnected(address, true, { hasContract: false });
+        }
+      } else {
+        console.log("No contract found in user data");
+        onWalletConnected(address, true, { hasContract: false });
+      }
+    } catch (error) {
+      console.error("Error checking user contract:", error);
+      onWalletConnected(address, true, { hasContract: false });
+    }
+  };
+
   const connectWallet = async () => {
     try {
       if (!window.ethereum) {
@@ -35,11 +73,12 @@ const WalletConnect = ({ onWalletConnected }) => {
         address,
         signature,
       });
-    
+
       if (token) {
         setAuthenticated(true);
         localStorage.setItem("token", token); // Save token in localStorage
-        onWalletConnected(address, true); // Notify parent component of successful authentication
+        onWalletConnected(address, true);
+        await checkUserContract(address); // Notify parent component of successful authentication
       } else {
         setError("Authentication failed");
         onWalletConnected(address, false); // Notify parent component of failed authentication

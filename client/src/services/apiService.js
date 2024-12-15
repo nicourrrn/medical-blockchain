@@ -18,7 +18,8 @@ const apiService = {
   verifySignature: (data) => api.post("/auth/verify", data).then((res) => res.data),
   postUserInfo: (data) => api.post("/auth/info", data).then((res) => res.data),
   getUserInfo: () => api.get("/auth/info").then((res) => res.data),
-  uploadContract: (data) => api.post("/auth/upload_contract", data).then((res) => res.data),
+  uploadContract: (contractData) => api.post("/auth/upload_contract", contractData)
+        .then((res) => res.data),
 };
 
 export default apiService;
